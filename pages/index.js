@@ -1,81 +1,114 @@
 import Head from 'next/head'
+import { PlusCircleIcon, UploadIcon, UserIcon } from '@heroicons/react/solid'
+import { useState } from 'react'
 
-export default function Home() {
+export default function Main() {
+  const [students, setStudents] = useState([['M', 'John Doe', 37]]);
+  const [name, setName] = useState("");
+
+  function addStudent() {
+    setStudents(old => [...old, ['F', name, Math.floor(Math.random() * (48 - 36) + 36)]]);
+    setName("");
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
+    <div className="flex flex-col min-h-screen">
       <Head>
-        <title>Create Next App</title>
+        <title>Class Partition GA</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
-        <h1 className="text-6xl font-bold">
-          Welcome to{' '}
-          <a className="text-blue-600" href="https://nextjs.org">
-            Next.js!
-          </a>
-        </h1>
+      <main className="flex flex-col flex-1">
+        <div className="flex flex-col sm:flex-row sm:flex-grow sm:grid-cols-2 gap-6">
+          <div className="flex flex-col sm:flex-grow col-span-2 sm:col-span-1 sm:w-2/5 p-8">
+            <div className="flex flex-row items-center justify-between">
+              <div className="text-xl font-bold">Student List</div>
+              <div className="flex flex-row space-x-2">
+                {/* <button className="inline-flex items-center px-4 py-2 border border-black rounded-md text-xs sm:text-sm font-medium hover:bg-gray-200 focus:outline-none cursor-pointer">
+                  <PlusCircleIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                  Add
+                </button> */}
+                <button className="inline-flex items-center px-4 py-2 border border-black rounded-md text-xs sm:text-sm font-medium hover:bg-gray-200 focus:outline-none cursor-pointer">
+                  <UploadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                  Import
+                </button>
+              </div>
+            </div>
 
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="p-3 font-mono text-lg bg-gray-100 rounded-md">
-            pages/index.js
-          </code>
-        </p>
+            <div className="flex-grow rounded-lg border mt-4">
+              <div className="relative h-full">
+                <div className="sm:absolute border border-black w-full h-full overflow-scroll rounded-lg">
+                  <table className="w-full divide-y divide-gray-200">
+                    <thead className="min-w-full text-black border-b border-black sticky top-0 z-10">
+                      <tr>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 w-2/3 text-left text-xs font-medium uppercase tracking-wider"
+                        >
+                          Name
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 w-1/3 text-left text-xs font-medium uppercase tracking-wider"
+                        >
+                          Age
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="overflow-y-scroll min-w-full bg-white divide-y divide-gray-200">
+                      <tr>
+                        <td className="px-5 py-3">
+                          <div className="flex flex-row items-center space-x-2">
+                            <UserIcon className="h-4 w-4 text-pink-500" />
+                            <input id="student_name" type="text" autoComplete="off" placeholder="Add a new student..." value={name} onChange={(e) => setName(e.target.value)}
+                              className="text-xs font-medium text-gray-400 uppercase tracking-wide focus:outline-none"></input>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3">
+                          <div className="flex flex-row items-center justify-between">
+                            <p className="text-xs font-medium text-gray-900 uppercase tracking-wide">0 yr 0 mo</p>
+                            <PlusCircleIcon onClick={addStudent} className="h-5 w-5 cursor-pointer" />
+                          </div>
+                        </td>
+                      </tr>
 
-        <div className="flex flex-wrap items-center justify-around max-w-4xl mt-6 sm:w-full">
-          <a
-            href="https://nextjs.org/docs"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Documentation &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Find in-depth information about Next.js features and API.
-            </p>
-          </a>
+                      {students && students.map((s) => (
+                        <>
+                          <tr key={s[1]} className="hover:bg-gray-50">
+                            <td className="px-5 py-3">
+                              <div className="flex flex-row items-center space-x-2">
+                                <UserIcon className={s[0] === 'M' ? "h-4 w-4 text-blue-500" : "h-4 w-4 text-pink-500"} />
+                                <p className="text-xs font-medium text-gray-900 uppercase tracking-wide">{s[1]}</p>
+                              </div>
+                            </td>
+                            <td className="px-5 py-3">
+                              <p className="text-xs font-medium text-gray-900 uppercase tracking-wide">{Math.floor(s[2] / 12)} yr {s[2] % 12} mo</p>
+                            </td>
+                          </tr>
+                        </>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <a
-            href="https://nextjs.org/learn"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Learn &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Learn about Next.js in an interactive course with quizzes!
-            </p>
-          </a>
+          <div className="flex flex-col sm:flex-grow col-span-2 sm:col-span-1 sm:w-3/5 p-8">
 
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Examples &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Discover and deploy boilerplate example Next.js projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Deploy &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+          </div>
         </div>
       </main>
 
-      <footer className="flex items-center justify-center w-full h-24 border-t">
-        <a
-          className="flex items-center justify-center"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className="h-4 ml-2" />
-        </a>
+      <footer className="flex flex-row items-center justify-between h-16 p-4 text-xs text-gray-500 bg-gray-200">
+        <div className="flex flex-col">
+          <p className="font-bold">Genetic Algorithm for Class Partitioning</p>
+          <p>As a project assignment of CS454 AI Based Software Engineering</p>
+          <p>Developed by Guntitat Sawadwuthikul</p>
+        </div>
+        <div className="flex flex-row">
+          <a className="hover:underline cursor-pointer">GitHub</a>
+        </div>
       </footer>
     </div>
   )
