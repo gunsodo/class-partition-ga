@@ -1,14 +1,25 @@
 import Head from 'next/head'
-import { PlusCircleIcon, UploadIcon, UserIcon } from '@heroicons/react/solid'
+import { PlusCircleIcon, TrashIcon, UploadIcon, UserIcon } from '@heroicons/react/solid'
 import { useState } from 'react'
 
 export default function Main() {
   const [students, setStudents] = useState([['M', 'John Doe', 37]]);
   const [name, setName] = useState("");
+  const [year, setYear] = useState(0);
+  const [month, setMonth] = useState(0);
+  const [gender, setGender] = useState('F');
 
   function addStudent() {
-    setStudents(old => [...old, ['F', name, Math.floor(Math.random() * (48 - 36) + 36)]]);
+    setStudents(old => [...old, [gender, name, parseInt(year) * 12 + parseInt(month)]]);
     setName("");
+    setYear(0);
+    setMonth(0);
+    setGender('F');
+  }
+
+  function deleteStudent(index) {
+    const arr = students.filter((_, i) => i !== index);
+    setStudents(arr);
   }
 
   return (
@@ -59,33 +70,43 @@ export default function Main() {
                       <tr>
                         <td className="px-5 py-3">
                           <div className="flex flex-row items-center space-x-2">
-                            <UserIcon className="h-4 w-4 text-pink-500" />
+                            <UserIcon onClick={() => setGender(gender === 'F' ? 'M' : 'F')}
+                              className={gender === 'M' ? "h-4 w-4 text-blue-500 cursor-pointer" : "h-4 w-4 text-pink-500 cursor-pointer"} />
                             <input id="student_name" type="text" autoComplete="off" placeholder="Add a new student..." value={name} onChange={(e) => setName(e.target.value)}
                               className="text-xs font-medium text-gray-400 uppercase tracking-wide focus:outline-none"></input>
                           </div>
                         </td>
                         <td className="px-5 py-3">
                           <div className="flex flex-row items-center justify-between">
-                            <p className="text-xs font-medium text-gray-900 uppercase tracking-wide">0 yr 0 mo</p>
+                            <div className="flex flex-row items-center justify-start">
+                              <input id="student_year" type="number" autoComplete="off" min="0" max="100" value={year} onChange={(e) => setYear(e.target.value)}
+                                className="text-xs font-medium text-gray-400 uppercase tracking-wide focus:outline-none w-8"></input>
+                              <p className="text-xs font-medium text-gray-900 uppercase tracking-wide mr-4">yr</p>
+                              <input id="student_month" type="number" autoComplete="off" min="0" max="12" value={month} onChange={(e) => setMonth(e.target.value)}
+                                className="text-xs font-medium text-gray-400 uppercase tracking-wide focus:outline-none w-8"></input>
+                              <p className="text-xs font-medium text-gray-900 uppercase tracking-wide">mo</p>
+                            </div>
                             <PlusCircleIcon onClick={addStudent} className="h-5 w-5 cursor-pointer" />
                           </div>
                         </td>
                       </tr>
 
-                      {students && students.map((s) => (
-                        <>
-                          <tr key={s[1]} className="hover:bg-gray-50">
-                            <td className="px-5 py-3">
-                              <div className="flex flex-row items-center space-x-2">
-                                <UserIcon className={s[0] === 'M' ? "h-4 w-4 text-blue-500" : "h-4 w-4 text-pink-500"} />
-                                <p className="text-xs font-medium text-gray-900 uppercase tracking-wide">{s[1]}</p>
-                              </div>
-                            </td>
-                            <td className="px-5 py-3">
+                      {students && students.map((s, i) => (
+                        <tr key={s[1]} className="hover:bg-gray-50">
+                          <td className="px-5 py-3">
+                            <div className="flex flex-row items-center space-x-2">
+                              <UserIcon className={s[0] === 'M' ? "h-4 w-4 text-blue-500" : "h-4 w-4 text-pink-500"} />
+                              <p className="text-xs font-medium text-gray-900 uppercase tracking-wide">{s[1]}</p>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3">
+                            <div className="flex flex-row items-center justify-between">
                               <p className="text-xs font-medium text-gray-900 uppercase tracking-wide">{Math.floor(s[2] / 12)} yr {s[2] % 12} mo</p>
-                            </td>
-                          </tr>
-                        </>
+                              <TrashIcon onClick={() => deleteStudent(i)}
+                                className="h-4 w-4 text-gray-300 cursor-pointer" />
+                            </div>
+                          </td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>
