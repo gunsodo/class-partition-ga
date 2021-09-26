@@ -3,7 +3,7 @@ import { ChevronDoubleRightIcon, PencilIcon, PlusCircleIcon, TrashIcon, UploadIc
 import { createRef, useState } from 'react'
 import { Workbook } from 'exceljs';
 
-import { Population } from './lib/ga';
+import { Population } from '../lib/ga';
 import Chart from 'react-google-charts';
 
 export default function Main() {
