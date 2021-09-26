@@ -1,15 +1,18 @@
-import { std } from "mathjs";
+import { min, std } from "mathjs";
 import { random, sample, shuffle } from "lodash";
 
-class Chromosome {
+function randInt(num) { return Math.floor(Math.random(num) * num); }
+
+export class Chromosome {
     constructor(male, female, numClasses) {
         // arrays
         this.male = male;
         this.female = female;
-        this.classes = [...Array(numClasses).keys()];
 
         // number
         this.numClasses = numClasses;
+        this.fitness = 99999;
+        this.sumArray = [];
     }
 
     // Genetic operators
@@ -19,33 +22,34 @@ class Chromosome {
 
         var p1 = Chromosome.getPivot(gc);
         var p2;
-        do { Chromosome.getPivot(gc) } while (p1 === p2);
+        do { p2 = Chromosome.getPivot(gc); } while (p1 === p2);
 
         // swap
         [gc[p1], gc[p2]] = [gc[p2], gc[p1]];
 
-        if (gender === 'M') return Chromosome(gc, c.female, c.numClasses);
-        else return Chromosome(c.male, gc, c.numClasses);
+        if (gender === 'M') return new Chromosome(gc, c.female, c.numClasses);
+        else return new Chromosome(c.male, gc, c.numClasses);
     }
 
     static crossOver(c1, c2) {
-        return sample([Chromosome(c1.male, c2.female), Chromosome(c1.female, c2.male)])
+        return sample([new Chromosome(c1.male, c2.female, c1.numClasses), new Chromosome(c1.female, c2.male, c1.numClasses)])
     }
 
     // Fitness evaluation
-
-    fitness(malesArray, femalesArray) {
+    // needs fix
+    calcFitness(malesArray, femalesArray) {
         var sumArray = new Array(this.numClasses).fill(0);
 
-        malesArray.forEach(function (e, i) {
-            sumArray[e] += i[2];
+        this.male.forEach(function (e, i) {
+            sumArray[e] += malesArray[i][2];
         })
 
-        femalesArray.forEach(function (e, i) {
-            sumArray[e] += i[2];
+        this.female.forEach(function (e, i) {
+            sumArray[e] += femalesArray[i][2];
         })
-
-        return std(sumArray);
+        
+        this.sumArray = sumArray;
+        this.fitness = std(sumArray);
     }
 
     // Helpers
@@ -59,19 +63,23 @@ class Chromosome {
     }
 
     static getPivot(gc) {
-        return Math.floor(Math.random() * gc.length);
+        return randInt(gc.length);
     }
 }
 
-class Population {
-    constructor(capacity) {
-        // [[mc, fc, fitness], ...]
+export class Population {
+    constructor(malesArray, femalesArray, capacity, numClasses) {
+        // [chromosome, ...]
         this.population = [];
+        this.malesArray = malesArray;
+        this.femalesArray = femalesArray;
+
         this.capacity = capacity;
+        this.numClasses = numClasses;
     }
 
     rerank() {
-        this.population.sort((a, b) => a[2] - b[2]);
+        this.population.sort((a, b) => a.fitness - b.fitness);
     }
 
     naturalSelection() {
@@ -79,17 +87,44 @@ class Population {
         this.population = this.population.slice(0, this.capacity);
     }
 
+    initialize() {
+        const malesBaseArray = Chromosome.initializeGC(this.malesArray.length, this.numClasses);
+        const femalesBaseArray = Chromosome.initializeGC(this.malesArray.length, this.numClasses);
+
+        var indv;
+        for (var i = 0; i < this.capacity; i++) {
+            indv = new Chromosome(shuffle(malesBaseArray), shuffle(femalesBaseArray), this.numClasses);
+            indv.calcFitness(this.malesArray, this.femalesArray);
+            this.population.push(indv);
+        }
+    }
+
     breed(n) {
         for (var i = 0; i < n; i++) {
             const lottery = Math.random() * 100;
-            if (lottery <= 50) {
+            const validIndex = min(this.capacity, this.population.length);
+            var offspring;
+
+            if (lottery <= 60) {
                 // swap
+                offspring = Chromosome.swapMutation(this.population[randInt(validIndex)]);
             }
             else {
                 // cross-over
+                var p1 = randInt(validIndex);
+                var p2;
+                do { p2 = randInt(validIndex); } while (p1 === p2);
+
+                offspring = Chromosome.crossOver(this.population[p1], this.population[p2]);
             }
+            // determine fitness and add to population
+            offspring.calcFitness(this.malesArray, this.femalesArray);
+            this.population.push(offspring);
         }
-        // determine fitness
-        // add to population
+    }
+
+    step(numOffspring = 20) {
+        this.breed(numOffspring);
+        this.naturalSelection();
     }
 }
