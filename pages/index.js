@@ -4,6 +4,7 @@ import { createRef, useState } from 'react'
 import { Workbook } from 'exceljs';
 
 import { Population } from './ga';
+import Chart from 'react-google-charts';
 
 export default function Main() {
   const [students, setStudents] = useState([
@@ -22,11 +23,11 @@ export default function Main() {
 
   const [numClasses, setNumClasses] = useState(4);
   const [capacity, setCapacity] = useState(10);
-  const [numSteps, setNumSteps] = useState(10);
+  const [numSteps, setNumSteps] = useState(50);
 
   const [popArray, setPopArray] = useState([]);
   const [studentsByClass, setStudentByClass] = useState();
-  const [fitnessHistory, setFitnessHistory] = useState([]);
+  const [fitnessHistory, setFitnessHistory] = useState([['Steps', 'Standard Deviation']]);
 
   // GA
   var population;
@@ -47,10 +48,13 @@ export default function Main() {
     population = new Population(malesArray, femalesArray, capacity, numClasses);
     population.initialize();
 
+    var tempFitnessHistory = [['Steps', 'Standard Deviation']];
+
     for (var i = 0; i < numSteps; i++) {
       population.step();
-      setFitnessHistory(oldf => [...oldf, population.population[0].fitness]);
+      tempFitnessHistory.push([i + 1, population.population[0].fitness]);
     }
+    setFitnessHistory(tempFitnessHistory);
     setPopArray(population.population);
 
     // initialize classes array
@@ -71,7 +75,6 @@ export default function Main() {
       classesArray[classNum].push(student);
     })
 
-    console.log(classesArray);
     setStudentByClass(classesArray);
   }
 
@@ -150,7 +153,7 @@ export default function Main() {
             <div className="flex-grow rounded-lg border mt-4">
               <div className="relative h-full">
                 <div className="sm:absolute border border-black w-full h-full overflow-scroll rounded-lg">
-                  <table className="w-full divide-y divide-gray-200">
+                  <table className="w-full divide-y divide-gray-200 border-collapse">
                     <thead className="min-w-full bg-white text-black border-b border-black sticky top-0 z-10">
                       <tr>
                         <th
@@ -234,41 +237,27 @@ export default function Main() {
               </div>
             </div>
 
-            <div className="flex-grow rounded-lg border mt-4">
+            <div className="flex-grow rounded-lg mt-4">
               <div className="relative h-full">
-                <div className="sm:absolute border border-black w-full h-full overflow-scroll rounded-lg">
-                  <table className="w-full divide-y divide-gray-200">
-                    <thead className="min-w-full bg-white text-black border-b border-black sticky top-0 z-10">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 w-2/3 text-left text-xs font-medium uppercase tracking-wider"
-                        >
-                          Arrangement
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 w-1/3 text-left text-xs font-medium uppercase tracking-wider"
-                        >
-                          Fitness
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="overflow-y-scroll min-w-full bg-white divide-y divide-gray-200">
-                      {popArray && popArray.map((chr, i) => (
-                        <tr key={"pop" + i} className="hover:bg-gray-50">
-                          <td className="px-5 py-3">
-                            <p className="text-xs font-medium text-gray-900 uppercase tracking-wide">{chr.male}</p>
-                            <p className="text-xs font-medium text-gray-900 uppercase tracking-wide">{chr.female}</p>
-                            <p className="text-xs font-medium text-gray-900 uppercase tracking-wide">{chr.sumArray}</p>
-                          </td>
-                          <td className="px-5 py-3">
-                            <p className="text-xs font-medium text-gray-900 uppercase tracking-wide">{chr.fitness}</p>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="sm:absolute w-full h-full">
+                  <div className="flex w-full h-full">
+                    {fitnessHistory.length > 1 ? (
+                      <Chart
+                        chartType="LineChart"
+                        width={"100%"}
+                        height={"100%"}
+                        loader={<div>Loading...</div>}
+                        data={fitnessHistory}
+                        options={{
+                          hAxis: { title: 'Step' },
+                          vAxis: { title: 'STD' },
+                          legend: { position: 'none' },
+                        }}
+                      />) :
+                      (<div>
+                        Evolve!
+                      </div>)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -283,13 +272,13 @@ export default function Main() {
                           scope="col"
                           className="px-6 py-3 w-2/3 text-left text-xs font-medium uppercase tracking-wider"
                         >
-                          Arrangement
+                          Best Solution
                         </th>
                         <th
                           scope="col"
-                          className="px-6 py-3 w-2/3 text-left text-xs font-medium uppercase tracking-wider"
+                          className="px-6 py-3 w-2/3 text-right text-xs font-medium uppercase tracking-wider"
                         >
-                          Fitness: {popArray && popArray[0] && popArray[0].fitness}
+                          Fitness: {popArray && popArray[0] && Math.round(popArray[0].fitness * 1000) / 1000}
                         </th>
                       </tr>
                     </thead>
@@ -297,10 +286,13 @@ export default function Main() {
                       {studentsByClass && studentsByClass.map((classes, i) => (
                         <tr key={"class" + i} className="hover:bg-gray-50">
                           <td colSpan={2} className="px-5 py-3">
-                            <p className="text-sm font-bold text-gray-900 mb-2">{"Class " + (i + 1)}</p>
-                            <div className="space-y-1">
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="flex flex-row justify-between items-center col-span-3">
+                                <p className="text-sm font-bold text-gray-900 mb-2">{"Class " + (i + 1)}</p>
+                                <p className="text-sm font-bold text-gray-900 mb-2">{"Age sum: " + (popArray && popArray[0] && popArray[0].sumArray[i])}</p>
+                              </div>
                               {classes && classes.map((student) => (
-                                <div key={student[1]} className="flex flex-row items-center space-x-2">
+                                <div key={student[1]} className="flex flex-row items-center space-x-2 col-span-3 sm:col-span-1">
                                   <UserIcon className={student[0] === 'M' ? "h-4 w-4 text-blue-500" : "h-4 w-4 text-pink-500"} />
                                   <p className="text-xs font-medium text-gray-900">{student[1]}</p>
                                 </div>
@@ -319,14 +311,15 @@ export default function Main() {
         </div>
       </main>
 
-      <footer className="flex flex-row items-center justify-between h-16 p-4 text-xs text-gray-500 bg-gray-200">
+      <footer className="flex flex-row items-center justify-between h-20 sm:h-16 p-4 text-xs text-gray-500 bg-gray-200">
         <div className="flex flex-col">
           <p className="font-bold">Genetic Algorithm for Class Partitioning</p>
           <p>As a project assignment of CS454 AI Based Software Engineering</p>
           <p>Developed by Guntitat Sawadwuthikul</p>
         </div>
-        <div className="flex flex-row">
-          <a className="hover:underline cursor-pointer">GitHub</a>
+        <div className="flex flex-col sm:flex-row flex-wrap sm:space-x-4">
+          <a href="https://gunsodo.github.io/" target="_blank" className="hover:underline cursor-pointer">Website</a>
+          <a href="https://github.com/gunsodo" target="_blank" className="hover:underline cursor-pointer">GitHub</a>
         </div>
       </footer>
     </div>
