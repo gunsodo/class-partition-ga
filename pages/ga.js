@@ -42,9 +42,6 @@ export class Chromosome {
     // needs fix
     calcFitness(malesArray, femalesArray) {
         var sumArray = new Array(this.numClasses).fill(0);
-
-        // console.log(this.male, this.female, malesArray, femalesArray);
-
         this.male.forEach(function (e, i) {
             if (malesArray[i] && malesArray[i][2]) sumArray[e] += malesArray[i][2];
         })
