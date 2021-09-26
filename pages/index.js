@@ -1,6 +1,7 @@
 import Head from 'next/head'
-import { ChevronDoubleRightIcon, PencilIcon, PlusCircleIcon, TrashIcon, UploadIcon, UserIcon } from '@heroicons/react/solid'
-import { useState } from 'react'
+import { ChevronDoubleRightIcon, PencilIcon, PlusCircleIcon, TrashIcon, UploadIcon, UserIcon, XIcon } from '@heroicons/react/solid'
+import { createRef, useState } from 'react'
+import { Workbook } from 'exceljs';
 
 import { Population } from './ga';
 
@@ -17,11 +18,15 @@ export default function Main() {
   const [year, setYear] = useState(0);
   const [month, setMonth] = useState(0);
   const [gender, setGender] = useState('F');
+  let file = createRef();
 
-  const [numClasses, setNumClasses] = useState(3);
-  const [capacity, setCapacity] = useState(3);
+  const [numClasses, setNumClasses] = useState(4);
+  const [capacity, setCapacity] = useState(10);
+  const [numSteps, setNumSteps] = useState(10);
+
   const [popArray, setPopArray] = useState([]);
-  const [numSteps, setNumSteps] = useState(3);
+  const [studentsByClass, setStudentByClass] = useState();
+  const [fitnessHistory, setFitnessHistory] = useState([]);
 
   // GA
   var population;
@@ -36,10 +41,45 @@ export default function Main() {
 
   // TODO: keep history
   function evolve() {
+    const malesArray = students.filter(a => a[0] === 'M');
+    const femalesArray = students.filter(a => a[0] === 'F');
+
+    population = new Population(malesArray, femalesArray, capacity, numClasses);
+    population.initialize();
+
     for (var i = 0; i < numSteps; i++) {
       population.step();
+      setFitnessHistory(oldf => [...oldf, population.population[0].fitness]);
     }
     setPopArray(population.population);
+
+    // initialize classes array
+    var classesArray = []
+    for (var i = 0; i < numClasses; i++) {
+      classesArray = [...classesArray, []];
+    }
+
+    // separate into classes
+    const bestChromosome = population.population[0];
+    bestChromosome.male.map((classNum, i) => {
+      const student = population.malesArray[i];
+      classesArray[classNum].push(student);
+    })
+
+    bestChromosome.female.map((classNum, i) => {
+      const student = population.femalesArray[i];
+      classesArray[classNum].push(student);
+    })
+
+    console.log(classesArray);
+    setStudentByClass(classesArray);
+  }
+
+  function reset() {
+    population = null;
+    setPopArray([]);
+    setStudentByClass();
+    setFitnessHistory([]);
   }
 
   // UI
@@ -56,6 +96,30 @@ export default function Main() {
     setStudents(arr);
   }
 
+  function importStudents() {
+    const wb = new Workbook();
+    const reader = new FileReader();
+
+    reader.readAsArrayBuffer(file.current.files[0]);
+    reader.onload = () => {
+      const buffer = reader.result;
+      wb.xlsx.load(buffer).then(workbook => {
+        workbook.eachSheet((sheet) => {
+          sheet.eachRow((row) => {
+            let array = row.values;
+            array.shift();
+            setStudents(old => [...old, array]);
+          })
+        })
+      })
+    }
+  }
+
+  function resetAll() {
+    setStudents([]);
+    reset();
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Head>
@@ -63,21 +127,23 @@ export default function Main() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="flex flex-col flex-1">
-        <div className="flex flex-col sm:flex-row sm:flex-grow sm:grid-cols-2">
+      <main className="flex flex-col flex-1 p-8">
+        <div className="flex flex-col sm:flex-row sm:flex-grow sm:grid-cols-2 gap-6">
           {/* Left Panel */}
-          <div className="flex flex-col sm:flex-grow col-span-2 sm:col-span-1 sm:w-2/5 p-8">
+          <div className="flex flex-col sm:flex-grow col-span-2 sm:col-span-1 sm:w-2/5">
             <div className="flex flex-row items-center justify-between">
               <div className="text-xl font-bold">Student List</div>
               <div className="flex flex-row space-x-2">
-                {/* <button className="inline-flex items-center px-4 py-2 border border-black rounded-md text-xs sm:text-sm font-medium hover:bg-gray-200 focus:outline-none cursor-pointer">
-                  <PlusCircleIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                  Add
-                </button> */}
-                <button className="inline-flex items-center px-4 py-2 border border-black rounded-md text-xs sm:text-sm font-medium hover:bg-gray-200 focus:outline-none cursor-pointer">
+                <button onClick={resetAll}
+                  className="inline-flex items-center px-4 py-2 border border-black rounded-md text-xs sm:text-sm font-medium hover:bg-gray-200 focus:outline-none cursor-pointer">
+                  <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                  Reset
+                </button>
+                <label htmlFor="file_upload" className="inline-flex items-center px-4 py-2 border border-black rounded-md text-xs sm:text-sm font-medium hover:bg-gray-200 focus:outline-none cursor-pointer">
                   <UploadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                   Import
-                </button>
+                </label>
+                <input onChange={importStudents} id="file_upload" type="file" className="hidden" ref={file}></input>
               </div>
             </div>
 
@@ -85,7 +151,7 @@ export default function Main() {
               <div className="relative h-full">
                 <div className="sm:absolute border border-black w-full h-full overflow-scroll rounded-lg">
                   <table className="w-full divide-y divide-gray-200">
-                    <thead className="min-w-full text-black border-b border-black sticky top-0 z-10">
+                    <thead className="min-w-full bg-white text-black border-b border-black sticky top-0 z-10">
                       <tr>
                         <th
                           scope="col"
@@ -151,14 +217,14 @@ export default function Main() {
           </div>
 
           {/* Right Panel */}
-          <div className="flex flex-col sm:flex-grow col-span-2 sm:col-span-1 sm:w-3/5 p-8">
+          <div className="flex flex-col sm:flex-grow col-span-2 sm:col-span-1 sm:w-3/5">
             <div className="flex flex-row items-center justify-between">
               <div className="text-xl font-bold">Results</div>
               <div className="flex flex-row space-x-2">
-                <button onClick={initialize}
+                <button onClick={reset}
                   className="inline-flex items-center px-4 py-2 border border-black rounded-md text-xs sm:text-sm font-medium hover:bg-gray-200 focus:outline-none cursor-pointer">
-                  <PencilIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                  Initialize
+                  <XIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                  Clear
                 </button>
                 <button onClick={evolve}
                   className="inline-flex items-center px-4 py-2 border border-black rounded-md text-xs sm:text-sm font-medium hover:bg-gray-200 focus:outline-none cursor-pointer">
@@ -172,7 +238,7 @@ export default function Main() {
               <div className="relative h-full">
                 <div className="sm:absolute border border-black w-full h-full overflow-scroll rounded-lg">
                   <table className="w-full divide-y divide-gray-200">
-                    <thead className="min-w-full text-black border-b border-black sticky top-0 z-10">
+                    <thead className="min-w-full bg-white text-black border-b border-black sticky top-0 z-10">
                       <tr>
                         <th
                           scope="col"
@@ -201,6 +267,49 @@ export default function Main() {
                           </td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-grow rounded-lg border mt-4">
+              <div className="relative h-full">
+                <div className="sm:absolute border border-black w-full h-full overflow-scroll rounded-lg">
+                  <table className="w-full divide-y divide-gray-200">
+                    <thead className="min-w-full bg-white text-black border-b border-black sticky top-0 z-10">
+                      <tr>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 w-2/3 text-left text-xs font-medium uppercase tracking-wider"
+                        >
+                          Arrangement
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 w-2/3 text-left text-xs font-medium uppercase tracking-wider"
+                        >
+                          Fitness: {popArray && popArray[0] && popArray[0].fitness}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="overflow-y-scroll min-w-full bg-white divide-y divide-gray-200">
+                      {studentsByClass && studentsByClass.map((classes, i) => (
+                        <tr key={"class" + i} className="hover:bg-gray-50">
+                          <td colSpan={2} className="px-5 py-3">
+                            <p className="text-sm font-bold text-gray-900 mb-2">{"Class " + (i + 1)}</p>
+                            <div className="space-y-1">
+                              {classes && classes.map((student) => (
+                                <div key={student[1]} className="flex flex-row items-center space-x-2">
+                                  <UserIcon className={student[0] === 'M' ? "h-4 w-4 text-blue-500" : "h-4 w-4 text-pink-500"} />
+                                  <p className="text-xs font-medium text-gray-900">{student[1]}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                      }
                     </tbody>
                   </table>
                 </div>

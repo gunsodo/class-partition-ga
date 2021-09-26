@@ -32,7 +32,10 @@ export class Chromosome {
     }
 
     static crossOver(c1, c2) {
-        return sample([new Chromosome(c1.male, c2.female, c1.numClasses), new Chromosome(c1.female, c2.male, c1.numClasses)])
+        if (c1.male.length === c2.male.length && c1.female.length === c2.female.length) {
+            return sample([new Chromosome(c1.male, c2.female, c1.numClasses), new Chromosome(c1.female, c2.male, c1.numClasses)]);
+        }
+        else { return false; }
     }
 
     // Fitness evaluation
@@ -40,24 +43,27 @@ export class Chromosome {
     calcFitness(malesArray, femalesArray) {
         var sumArray = new Array(this.numClasses).fill(0);
 
+        // console.log(this.male, this.female, malesArray, femalesArray);
+
         this.male.forEach(function (e, i) {
-            sumArray[e] += malesArray[i][2];
+            if (malesArray[i] && malesArray[i][2]) sumArray[e] += malesArray[i][2];
         })
 
         this.female.forEach(function (e, i) {
-            sumArray[e] += femalesArray[i][2];
+            if (femalesArray[i] && femalesArray[i][2]) sumArray[e] += femalesArray[i][2];
         })
-        
+
         this.sumArray = sumArray;
         this.fitness = std(sumArray);
     }
 
     // Helpers
 
-    static initializeGC(numStudents, numClasses) {
+    static initializeGC(gender, numStudents, numClasses) {
         var gc = [];
         for (var i = 0; i < numStudents; i++) {
-            gc.push(i % numClasses);
+            if (gender === 'M') gc.push(i % numClasses);
+            else gc.push((numClasses - 1) - (i % numClasses));
         }
         return shuffle(gc);
     }
@@ -88,8 +94,8 @@ export class Population {
     }
 
     initialize() {
-        const malesBaseArray = Chromosome.initializeGC(this.malesArray.length, this.numClasses);
-        const femalesBaseArray = Chromosome.initializeGC(this.malesArray.length, this.numClasses);
+        const malesBaseArray = Chromosome.initializeGC('M', this.malesArray.length, this.numClasses);
+        const femalesBaseArray = Chromosome.initializeGC('F', this.femalesArray.length, this.numClasses);
 
         var indv;
         for (var i = 0; i < this.capacity; i++) {
@@ -116,6 +122,11 @@ export class Population {
                 do { p2 = randInt(validIndex); } while (p1 === p2);
 
                 offspring = Chromosome.crossOver(this.population[p1], this.population[p2]);
+
+                // if # males are not equal, then operate on mutation instead
+                if (!offspring) {
+                    offspring = Chromosome.swapMutation(this.population[randInt(validIndex)]);
+                }
             }
             // determine fitness and add to population
             offspring.calcFitness(this.malesArray, this.femalesArray);
