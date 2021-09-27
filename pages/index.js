@@ -1,5 +1,5 @@
 import Head from 'next/head'
-import { ChevronDoubleRightIcon, PencilIcon, PlusCircleIcon, TrashIcon, UploadIcon, UserIcon, XIcon } from '@heroicons/react/solid'
+import { ChevronDoubleRightIcon, PlusCircleIcon, TrashIcon, UploadIcon, UserIcon, XIcon } from '@heroicons/react/solid'
 import { createRef, useState } from 'react'
 import { Workbook } from 'exceljs';
 
@@ -44,6 +44,8 @@ export default function Main() {
     for (var i = 0; i < numSteps; i++) {
       population.step();
       tempFitnessHistory.push([i + 1, population.population[0].fitness]);
+
+      if (population.population[0].fitness <= 0) break;
     }
     setFitnessHistory(tempFitnessHistory);
     setPopArray(population.population);
