@@ -1,29 +1,22 @@
-# Next.js + Tailwind CSS Example
+# Genetic Algorithm for Class Partitioning
 
-This example shows how to use [Tailwind CSS](https://tailwindcss.com/) [(v2.2)](https://blog.tailwindcss.com/tailwindcss-2-2) with Next.js. It follows the steps outlined in the official [Tailwind docs](https://tailwindcss.com/docs/guides/nextjs).
+> As a project assignment of CS454 AI Based Software Engineering, KAIST (Fall 2021)
 
-It uses the new [`Just-in-Time Mode`](https://tailwindcss.com/docs/just-in-time-mode) for Tailwind CSS.
+This tool helps partition a group of students into classes with the least standard deviation between
+each class's total age, which is used as the fitness. However, another crucial condition is that, the number of boys and girls in each class should be distributed as eqaully as possible. 
 
-## Preview
+This tool is constructed using genetic algorithm technique, creating `K` more breeds and keeping the best `K` (population capacity) individuals at each step.
 
-Preview the example live on [StackBlitz](http://stackblitz.com/):
+Visit [this link](https://class-partition-ga.vercel.app/) for the live demo. The detailed description of the project can be found in the PDF file.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/vercel/next.js/tree/canary/examples/with-tailwindcss)
+## Instructions
 
-## Deploy your own
+- Add a new student to the list: You can add new student to the list by directly input the student's information to the first row of the left table. To change the gender, you can toggle the blue/pink icon in front of the name.
 
-Deploy the example using [Vercel](https://vercel.com?utm_source=github&utm_medium=readme&utm_campaign=next-example):
+- Add a batch of students: To add multiple students at a time, you should prepare an Excel document (only `.xlsx` is supported). The file should contain 3 columns: gender (either `M` or `F`), name, and age (in months). The file can be uploaded by clicking the "Import" button on the left panel. A sample file `sample.xlsx` is provided for testing.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/git/external?repository-url=https://github.com/vercel/next.js/tree/canary/examples/with-tailwindcss&project-name=with-tailwindcss&repository-name=with-tailwindcss)
+- Search for the solution: By clicking the button "Evolve", the tool starts to search for the best solution (one with the least fitness value) with the given parameters (to be mentioned afterwards). The graph will be shown, presenting the fitness of the best individual of the population at each step. The bottom-right table will show the best solution. You can click the evolve button again to reproduce the results with a different seed.
 
-## How to use
+- Adjust the parameter: Three parameters are available for adjustment: steps (the number of generation), rooms (number of classes), and capacity (the maximum capacity of the population). To properly apply the effect, the "Clear" button should be clicked before proceeding to search for a new solution.
 
-Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) with [npm](https://docs.npmjs.com/cli/init) or [Yarn](https://yarnpkg.com/lang/en/docs/cli/create/) to bootstrap the example:
-
-```bash
-npx create-next-app --example with-tailwindcss with-tailwindcss-app
-# or
-yarn create next-app --example with-tailwindcss with-tailwindcss-app
-```
-
-Deploy it to the cloud with [Vercel](https://vercel.com/new?utm_source=github&utm_medium=readme&utm_campaign=next-example) ([Documentation](https://nextjs.org/docs/deployment)).
+- Reset the environment: Clicking the "Reset" button will erase all students' data and the results.
